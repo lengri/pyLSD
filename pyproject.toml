@@ -5,6 +5,12 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools]
 packages = ["pyLSD"]
 
+[tool.setuptools.packages.find]
+where = ["pyLSD"]
+
+[tool.setuptools.package-data]
+mypkg = ["*.mat"]
+
 [project]
 name = "pyLSD"
 version = "0.0.1"
