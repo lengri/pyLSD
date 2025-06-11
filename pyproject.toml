@@ -2,14 +2,15 @@
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
+# Include non-code files like .mat
+[tool.setuptools.package-data]
+"pyLSD" = ["*.mat"]
+
+[tool.setuptools.include-package-data]
+include-package-data = true
+
 [tool.setuptools]
 packages = ["pyLSD"]
-
-[tool.setuptools.packages.find]
-where = ["pyLSD"]
-
-[tool.setuptools.package-data]
-mypkg = ["*.mat"]
 
 [project]
 name = "pyLSD"
