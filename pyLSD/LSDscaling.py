@@ -1,8 +1,8 @@
 import numpy as np
 import scipy as sp
 import os 
-from LSDparse import parse_LSDconsts, parse_LSDERA40
-from LSDspectra import (
+from .LSDparse import parse_LSDconsts, parse_LSDERA40
+from .LSDspectra import (
     calculate_muon_flux,
     calculate_proton_flux,
     calculate_neutron_flux,

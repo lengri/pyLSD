@@ -1,6 +1,6 @@
 import numpy as np 
 import scipy as sp 
-from LSDparse import parse_LSDERA40
+from .LSDparse import parse_LSDERA40
 
 def convert_xyz_to_pressure(
     site_lat : np.ndarray, 
