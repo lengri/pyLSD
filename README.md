@@ -5,7 +5,7 @@ The original code used for this Python implementation can be found in the supple
 
 # Usage
 
-Using pyLSD is equivalent to using the Matlab version, altough some functions have been renamed to improve user understanding. The main function to calculate scaling
+Using pyLSD is equivalent to using the Matlab version, altough some functions have been renamed to improve readibility. The main function to calculate scaling
 factors is `apply_LSD_scaling_routine()`. It takes a __a single sample point__ as an input, this means that it has to be used in a loop when calculating scaling factors for different pixels in a
 basin.
 
