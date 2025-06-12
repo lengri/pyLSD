@@ -1,16 +1,19 @@
 # pyLSD
 
-__pyLSD__ is a simple translation of the Lifton-Sota-Dunai scaling scheme from the original Matlab source code into Python.
-The original code used for this Python implementation can be found in the supplement to [Lifton et al. (2014)](https://doi.org/10.1016/j.epsl.2013.10.052).
+__pyLSD__ is a simple translation of the Lifton-Sato-Dunai scaling scheme from the Matlab source code into Python.
+The original code that this Python implementation is based on can be found in the supplement to 
+[Lifton et al. (2014)](https://doi.org/10.1016/j.epsl.2013.10.052).
 
 # Usage
 
-Using pyLSD is equivalent to using the Matlab version, altough some functions have been renamed to improve readibility. The main function to calculate scaling
-factors is `apply_LSD_scaling_routine()`. It takes a __a single sample point__ as an input, this means that it has to be used in a loop when calculating scaling factors for different pixels in a
-basin.
+Using mostly pyLSD is equivalent to using the Matlab version, altough some functions have been renamed to improve readibility. 
+The main function to calculate scaling factors is `apply_LSD_scaling_routine()`. It takes a __a single sample point__ as an input, 
+this means that it has to be used in a loop when calculating scaling factors for different pixels in a basin.
 
 ```
-out = apply_LSD_scaling_routine(
+import pyLSD as lsd
+
+out = lsd.apply_LSD_scaling_routine(
     lat = 45.,
     lon = 45.,
     alt = 2000.,
@@ -23,7 +26,9 @@ out = apply_LSD_scaling_routine(
 )
 ```
 
-The output us a dictionary containing various information (refer to the supplement of Lifton et al.) for more details. Importanty, the scaling factors for spallogenic neutron, epithermal neutron, thermal neutron, total muon, negative muon, and positive muon scaling factors can be accessed via:
+The output us a dictionary containing various information (please refer to the supplement of Lifton et al. for more details). 
+Importanty, the scaling factors for spallogenic neutron, epithermal neutron, thermal neutron, total muon, negative muon, 
+and positive muon scaling factors can be accessed via:
 
 ```
 print("Spallogenic neutron scaling factors:", output["Be"])
@@ -34,3 +39,10 @@ print("Negative muon flux scaling factors:", output["mn"])
 print("Positive muon flux scaling factors:", output["mp"])
 ```
 
+# Notes
+
+Site-specific pressure and surface temperature can be calculated in two ways: First, by using the standard atmosphere model 
+(NOAA, 1976)[https://www.ngdc.noaa.gov/stp/space-weather/online-publications/miscellaneous/us-standard-atmosphere-1976/us-standard-atmosphere_st76-1562_noaa.pdf]. 
+To use this option, set `stdatm = True` when calling `lsd.apply_LSD_scaling_routine()`. Second, the default option: 
+Using ERA40 reanalysis data of pressure and temperature (Dee et al., 2011)[https://doi.org/10.1002/qj.828]. 
+This should be the preferred option especially for sites outside North America.
