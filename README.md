@@ -4,9 +4,22 @@ __pyLSD__ is a simple translation of the Lifton-Sato-Dunai scaling scheme from t
 The original code that this Python implementation is based on can be found in the supplement to 
 [Lifton et al. (2014)](https://doi.org/10.1016/j.epsl.2013.10.052).
 
+# Installation
+
+It is recommended to install pyLSD into a separate virtual environment to avoid any package version incompatibilities.
+
+In your console, type 
+```
+python -m venv lsd
+cd lsd\Scripts
+activate
+pip install git+https://github.com/lengri/pyLSD.git
+```
+Voilà! 
+
 # Usage
 
-Using mostly pyLSD is equivalent to using the Matlab version, altough some functions have been renamed to improve readibility. 
+Using pyLSD is mostly equivalent to using the Matlab version, altough some functions have been renamed to improve readibility. 
 The main function to calculate scaling factors is `apply_LSD_scaling_routine()`. It takes a __a single sample point__ as an input, 
 this means that it has to be used in a loop when calculating scaling factors for different pixels in a basin.
 
