@@ -26,9 +26,9 @@ out = lsd.apply_LSD_scaling_routine(
 )
 ```
 
-The output us a dictionary containing various information (please refer to the supplement of [Lifton et al.](https://doi.org/10.1016/j.epsl.2013.10.052) for more details). 
+The output is a dictionary containing various information (please refer to the supplement of [Lifton et al.](https://doi.org/10.1016/j.epsl.2013.10.052) for more details). 
 Importanty, the scaling factors for spallogenic neutron, epithermal neutron, thermal neutron, total muon, negative muon, 
-and positive muon scaling factors can be accessed via:
+and positive muon production can be accessed via:
 
 ```
 print("Spallogenic neutron scaling factors:", output["Be"])
@@ -43,6 +43,6 @@ print("Positive muon flux scaling factors:", output["mp"])
 
 Site-specific pressure and surface temperature can be calculated in two ways: First, by using the standard atmosphere model 
 ([NOAA, 1976](https://www.ngdc.noaa.gov/stp/space-weather/online-publications/miscellaneous/us-standard-atmosphere-1976/us-standard-atmosphere_st76-1562_noaa.pdf)). 
-To use this option, set `stdatm = True` when calling `lsd.apply_LSD_scaling_routine()`. Second, the default option: 
+To use this option, set `stdatm = True` when calling `lsd.apply_LSD_scaling_routine()`. Second, the default option with `stdatm=False`: 
 Using ERA40 reanalysis data of pressure and temperature ([Dee et al., 2011](https://doi.org/10.1002/qj.828)). 
 This should be the preferred option especially for sites outside North America.
