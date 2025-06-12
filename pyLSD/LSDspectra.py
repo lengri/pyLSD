@@ -1,5 +1,8 @@
 import numpy as np
-from .LSDparse import parse_LSDconsts
+try:
+    from .LSDparse import parse_LSDconsts
+except ImportError:
+    from LSDparse import parse_LSDconsts
 
 ############################################################
 ### NEUTRON, MUON, PROTON, LOW E NEUTRON SPECTRA GO HERE ###

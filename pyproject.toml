@@ -2,26 +2,22 @@
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
-# Include non-code files like .mat
-[tool.setuptools.package-data]
-"pyLSD" = ["*.mat"]
-
-[tool.setuptools.include-package-data]
-include-package-data = true
-
 [tool.setuptools]
 packages = ["pyLSD"]
+
+[tool.setuptools.package-data]
+"pyLSD" = ["*.mat"]
 
 [project]
 name = "pyLSD"
 version = "0.0.1"
 authors = [
-  { name="Lennart Grimm" },
+  { name = "Lennart Grimm" }
 ]
 description = "An almost 1:1 copy of the original Matlab LSD code into Python."
 readme = "README.md"
 requires-python = ">=3.7"
 dependencies = [
-  'numpy',
-  'scipy',
+  "numpy",
+  "scipy"
 ]

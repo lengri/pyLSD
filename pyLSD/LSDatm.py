@@ -1,11 +1,14 @@
 import numpy as np 
 import scipy as sp 
-from .LSDparse import parse_LSDERA40
+try:
+    from .LSDparse import parse_LSDERA40
+except ImportError:
+    from LSDparse import parse_LSDERA40
 
 def convert_xyz_to_pressure(
-    site_lat : np.ndarray, 
-    site_lon : np.ndarray, 
-    site_elev : np.ndarray,
+    site_lat : float, 
+    site_lon : float, 
+    site_elev : float,
     era40 : dict = parse_LSDERA40()
 ):
     
@@ -55,16 +58,7 @@ def convert_xyz_to_pressure(
     
     # correct negative longitudes
 
-    sz = np.where(site_lon < 0)
-    site_lon[sz] = site_lon[sz] + 360
-    
-    # we need to check if lat, lon, elev is 1d or 2d. If it is in 2D,
-    # we'll flatten it here
-    shape = site_lat.shape 
-    if len(shape) > 1:
-        site_lat = site_lat.flatten()
-        site_lon = site_lon.flatten()
-        site_elev = site_elev.flatten()
+    if site_lon < 0: site_lon += 360
 
     # Interpolate sea level pressure and 1000-mb temperature
     # from global reanalysis data grids. 
@@ -72,14 +66,14 @@ def convert_xyz_to_pressure(
     # site_T in K, site_P in hPa
 
     slp_interpolator = sp.interpolate.RegularGridInterpolator(
-        (era40["ERA40lat"][:,0], era40["ERA40lon"][:,0]), 
+        (era40["ERA40lat"], era40["ERA40lon"]), 
         era40["meanP"],
         method="linear",
         bounds_error=True
     )
     site_slp = slp_interpolator((site_lat, site_lon))
     T_interpolator = sp.interpolate.RegularGridInterpolator(
-        (era40["ERA40lat"][:,0], era40["ERA40lon"][:,0]), 
+        (era40["ERA40lat"], era40["ERA40lon"]), 
         era40["meanT"],
         method="linear",
         bounds_error=True
@@ -135,13 +129,13 @@ def convert_xyz_to_pressure(
 
     out = site_slp * np.exp( (gmr/dtdz) * ( np.log(site_T) - np.log(site_T - (site_elev*dtdz)) ) )
     
-    return out.reshape(shape)
+    return out
 
 if __name__ == "__main__": 
     out = convert_xyz_to_pressure(
-        np.array([-10, 20, 30]),
-        np.array([-5, 6, 7]),
-        np.array([1000, 5000, 6000])
+        1,
+        1,
+        1
     )
     print(out)
     

@@ -1,4 +1,5 @@
 import scipy as sp
+import numpy as np
 import os 
 
 def _parse_file(fname):
@@ -9,12 +10,14 @@ def _parse_file(fname):
             
     for k in mat_data.keys():
         if "__" not in k:
-            # parse: if 1d array with first dim 1, save as 1d array
-            # if mat_data[k].shape[0] == 1
             if len(mat_data[k].shape) == 2:
-                out[k] = mat_data[k][0,:]
+                # if one of the dimensions is just 1, cast to 1d
+                if 1 in mat_data[k].shape:
+                    out[k] = np.squeeze(mat_data[k])
+                else:
+                    out[k] = mat_data[k]
             elif len(mat_data[k].shape) == 1:
-                out[k] = mat_data[k][0]
+                out[k] = mat_data[k][:,0]
             else: # 3D or any other case
                 out[k] == mat_data[k]
             

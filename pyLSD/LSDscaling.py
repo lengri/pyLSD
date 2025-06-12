@@ -1,14 +1,25 @@
 import numpy as np
 import scipy as sp
 import os 
-from .LSDparse import parse_LSDconsts, parse_LSDERA40
-from .LSDspectra import (
-    calculate_muon_flux,
-    calculate_proton_flux,
-    calculate_neutron_flux,
-    calculate_low_E_neutron_flux
-)
-from LSDatm import convert_xyz_to_pressure
+try:
+    from .LSDparse import parse_LSDconsts, parse_LSDERA40
+    from .LSDspectra import (
+        calculate_muon_flux,
+        calculate_proton_flux,
+        calculate_neutron_flux,
+        calculate_low_E_neutron_flux
+    )
+    from .LSDatm import convert_xyz_to_pressure
+except ImportError:
+    from LSDparse import parse_LSDconsts, parse_LSDERA40
+    from LSDspectra import (
+        calculate_muon_flux,
+        calculate_proton_flux,
+        calculate_neutron_flux,
+        calculate_low_E_neutron_flux
+    )
+    from LSDatm import convert_xyz_to_pressure
+    
 
 
 def apply_LSD_scaling_routine(
@@ -306,8 +317,11 @@ if __name__ == "__main__":
     consts = parse_LSDconsts()
     era40 = parse_LSDERA40()    
     
+    for k in era40.keys():
+        print(k, era40[k].shape)
+    
     start = time.time()
-    n_repeats = 100
+    n_repeats = 1
     for i in range(0, n_repeats):
         output = apply_LSD_scaling_routine(
             lat=45,
