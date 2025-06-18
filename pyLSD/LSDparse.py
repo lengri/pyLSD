@@ -2,7 +2,28 @@ import scipy as sp
 import numpy as np
 import os 
 
-def _parse_file(fname):
+def _parse_file(
+    fname : str
+) -> dict:
+    
+    """
+    Internal functions to deal with the .mat files of the original
+    LSD Matlab code. This will parse them into a Python dict compatible
+    with the other functions in this code.
+    
+    Written by Lennart Grimm (2025).
+    
+    Parameters:
+    -----------
+        fname : str
+            The file name of the .mat file. This function expects it to be
+            in the same dir as this Python file (LSDparse.py).
+    
+    Returns:
+    --------
+        out : dict
+            The parsed data as a Python dict.
+    """
     wd = os.path.dirname(os.path.realpath(__file__))
     mat_data = sp.io.loadmat(os.path.join(wd, fname))
     
@@ -23,22 +44,55 @@ def _parse_file(fname):
             
     return out
 
-def parse_LSDXSectsReedyAll():
+def parse_LSDXSectsReedyAll() -> dict:
+    """
+    Lazy wrapper around _parse_file() for .mat files.
+    
+    Written by Lennart Grimm (2025).
+    """
     return _parse_file("LSDXSectsReedyAll.mat")
 
-def parse_LSDERA40():
+def parse_LSDERA40() -> dict:
+    """
+    Lazy wrapper around _parse_file() for .mat files.
+    
+    Written by Lennart Grimm (2025).
+    """
     return _parse_file("LSDERA40.mat")
 
-def parse_LSDPMag_Sep12():
+def parse_LSDPMag_Sep12() -> dict:
+    """
+    Lazy wrapper around _parse_file() for .mat files.
+    
+    Written by Lennart Grimm (2025).
+    """
     return _parse_file("LSDPMag_Sep12.mat")
 
-def parse_LSDReference():
+def parse_LSDReference() -> dict:
+    """
+    Lazy wrapper around _parse_file() for .mat files.
+    
+    Written by Lennart Grimm (2025).
+    """
     return _parse_file("LSDReference.mat")
 
-def parse_LSDconsts():
+def parse_LSDconsts() -> dict:
 
-    # couldnt get this to work with the simple _parse_file function,
-    # so it gets its own code here...
+    """
+    Function to parse LSDconsts. This structure is a bit more complex, since the
+    last argument is another nested structure. This function attempts to parse it
+    explicitly.
+    
+    Written by Lennart Grimm (2025).
+    
+    Parameters:
+    -----------
+    
+    Returns:
+    --------
+        out : dict
+            The parsed data.
+    """
     
     fieldnames = [
         'version',

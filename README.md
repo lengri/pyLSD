@@ -34,8 +34,8 @@ out = lsd.apply_LSD_scaling_routine(
     age = 0.,
     w = -1.,
     nuclide = 10,
-    consts = parse_LSDconsts(),
-    era40 = parse_LSDERA40()
+    consts = lsd.parse_LSDconsts(),
+    era40 = lsd.parse_LSDERA40()
 )
 ```
 

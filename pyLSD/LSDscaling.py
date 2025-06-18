@@ -1,6 +1,6 @@
 import numpy as np
 import scipy as sp
-import os 
+
 try:
     from .LSDparse import parse_LSDconsts, parse_LSDERA40
     from .LSDspectra import (
@@ -20,67 +20,64 @@ except ImportError:
     )
     from LSDatm import convert_xyz_to_pressure
     
-
-
 def apply_LSD_scaling_routine(
     lat : float,
     lon : float,
     alt : float,
     stdatm : bool = False,
-    age : float = 0,
-    w : float = -1,
+    age : float = 0.,
+    w : float = -1.,
     nuclide : int = 10,
     consts : dict = parse_LSDconsts(),
     era40 : dict = parse_LSDERA40()
 ):
     
-    # This function calculates Lifton, Sato, and Dunai time-dependent scaling factors 
-    # for a given set of inputs
-    # syntax : LSD(lat,lon,alt,atm,age,nuclide)
-
-    # lat = sample latitude in deg N (negative values for S hemisphere)
-    # lon = sample longitude in deg E (negative values for W longitudes, 
-    #     or 0-360 degrees E) 
-    # alt = sample altitude in m above sea level
-    # atm = atmospheric model to use: 1 for U.S. Standard Atmosphere, 
-    #     0 for ERA-40 Reanalysis
-    # age = age of sample
-    # w = gravimetric fractional water content - 0.066 is default 
-    #     typically about 14# volumetric per Fred Phillips. -1 gives default
-    #     value
-    # nuclide = nuclide of interest: 26 for 26Al, 10 for 10Be, 14 for 14C,
-    #     3 for 3He, 0 for nucleon flux
-    # 
-    # Input values as scalars
-    #
-    # Based on code written by Greg Balco -- Berkeley
-    # Geochronology Center
-    # balcs@bgc.org
-    # 
-    # Modified by Brent Goehring and 
-    # Nat Lifton -- Purdue University
-    # nlifton@purdue.edu, bgoehrin@purdue.edu
-
-
-    # Copyright 2013, Berkeley Geochronology Center and
-    # Purdue University
-    # All rights reserved
-    # Developed in part with funding from the National Science Foundation.
-    #
-    # This program is free software you can redistribute it and/or modify
-    # it under the terms of the GNU General Public License, version 3,
-    # as published by the Free Software Foundation (www.fsf.org).
-
+    """
+    Apply the LSD scaling scheme to a single input point, specified by latitue (decimal degrees), 
+    longitude (decimal degrees), and elevation (m). The sample can also have a non-zero age, e.g.
+    if it was buried.
+    
+    Original Matlab code written by Greg Balco (2007), modified by Nat Lifton (2011), translated
+    to Python by Lennart Grimm (2025).
+    
+    Parameters:
+    -----------
+        lat : float
+            Sample point latitude in decimal degrees.
+        lon : float
+            Sample point longitude in decimal degrees.
+        alt : float
+            Sample point elevation in meters.
+        stdatm : bool
+            If True, use the standard atmosphere equation instead of EAR40 data to derive site pressures.
+        age : float
+            Sample age in years.
+        w : float
+            Gravimetric fractional water content. Leave at -1 to set the default value.
+        nuclide : int
+            Mass number of the nuclide of interest. Available options are 3 - He, 10 - Be,
+            14 - C, 26 - Al.
+        consts : dict
+            All the constants going into the LSD scaling scheme. By default, a dict called from
+            parse_LSDconsts().
+        era40 : dict
+            ERA40 reanalyis data used for calculating site-specific pressure if stdatm=False. By default,
+            a dict called from parse_LSDERA40().
+        
+    Returns:
+    --------
+        Site : dict
+            A dict containing the various scaling factors at the sample site for the specified nuclide.
+            Most important are probably "Be" (spallation scaling, this will be the name of the input nuclide), 
+            "eth" (epithermal neutron scaling), "th" (thermal neutrons scaling), "muSF" (energy dependent 
+            muon scaling), "muTotal" (Total muon flux scaling), "mn" (negative muon scaling), "mp" (positive muon
+            scaling).
+            There is more data available in the dict, see also the original Matlab code for more information.
+    """
 
     # what version is this?
     ver = '1.0'
-
-    is14 = 0
-    is10 = 0
-    is26 = 0
-    is3 = 0
-    isflux = 0
-
+    
     # Load the input data structure
     sample = {
         "lat": lat,
@@ -90,20 +87,6 @@ def apply_LSD_scaling_routine(
         "age": age,
         "nuclide": nuclide
     }
-    
-    if nuclide == 14:
-        is14 = 1
-    elif nuclide == 10:
-        is10 = 1
-    elif nuclide == 26:
-        is26 = 1    
-    elif nuclide == 3:
-        is3 = 1  
-    else:
-        isflux = 1
-        
-    # Make the time vector
-    calFlag = 0
 
     # Age Relative to t0=2010
     tv = np.concatenate(
@@ -202,44 +185,42 @@ def apply_LSD_scaling_routine(
     return LSDout
     
 def _calculate_LSD_production_scaling(
-    h : np.ndarray,
+    h : float,
     Rc : np.ndarray,
-    SPhi,
+    SPhi : float,
     w : float,
     nuclide : int,
     consts = parse_LSDconsts()
-):
+) -> dict:
     
-    # Implements the Lifton Sato Dunai scaling scheme for spallation.
-    #
-    # Syntax: scalingfactor = LiftonSatoSX(h,Rc,SPhi,w,consts)
-    #
-    # Where:
-    #   h = atmospheric pressure (hPa)
-    #   Rc = cutoff rigidity (GV)
-    #   SPhi = solar modulation potntial (Phi, see source paper)
-    #   w = fractional water content of ground (nondimensional)
-    #   
-    #
-    # Vectorized. Send in scalars or vectors of common length. 
-    #
-
-    # Written by Nat Lifton 2013, Purdue University
-    # nlifton@purdue.edu
-    # Based on code by Greg Balco -- Berkeley Geochronology Lab
-    # balcs@bgc.org
-    # April, 2007
-    # Part of the CRONUS-Earth online calculators: 
-    #      http://hess.ess.washington.edu/math
-    #
-    # Copyright 2001-2013, University of Washington, Purdue University
-    # All rights reserved
-    # Developed in part with funding from the National Science Foundation.
-    #
-    # This program is free software you can redistribute it and/or modify
-    # it under the terms of the GNU General Public License, version 3,
-    # as published by the Free Software Foundation (www.fsf.org).
-
+    """
+    Internal function to calculate scaling factors using pressure and cutoff rigidity.
+    
+    Original Matlab code written by Greg Balco (2007), modified by Nat Lifton (2013), translated
+    to Python by Lennart Grimm (2025).
+    
+    Parameters:
+    -----------
+        h : float
+            Site atmospheric pressure in hPa.
+        Rc : np.ndarray
+            Cutoff rigidities in GV.
+        SPhi : float
+            Solar modulation potential.
+        w : float
+            Gravimetric fractional water content. Leave at -1 to set the default value.
+        nuclide : int
+            Mass number of the nuclide of interest. Available options are 3 - He, 10 - Be,
+            14 - C, 26 - Al.
+        consts : dict
+            All the constants going into the LSD scaling scheme. By default, a dict called from
+            parse_LSDconsts().
+    
+    Returns:
+    --------
+        out : dict
+            A dict of scaling factors.
+    """
 
     # what version is this?
 

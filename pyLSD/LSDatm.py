@@ -10,53 +10,34 @@ def convert_xyz_to_pressure(
     site_lon : float, 
     site_elev : float,
     era40 : dict = parse_LSDERA40()
-):
+) -> float:
     
-    # Looks up mean sea level pressure and mean 1000 mb temp from ERA-40 reanalysis
-    # and calculates site atmospheric pressures using these as inputs to the
-    # standard atmosphere equation. 
-    #
-    # Syntax: pressure = ERA40(site_lat,site_lon,site_elv)
-    # 
-    # Requires:
-    #       site_lat: latitude (DD). Southern hemisphere is negative.
-    #       site_lon: longitude (DD). Western hemisphere is negative.
-    #           Tries to deal with 0-360 longitudes gracefully.
-    #       site_elv: elevation (m).
-    #
-    # Returns site pressure in hPa.
-    #
-    # Vectorized. Send vectors of equal length.
-    #
-    # Note: this must load the data file ERA40.mat whenever called. 
-    # Repeated calls to this function will be slow for this reason. 
-    #
-    # Also: This function is OK but not great for Antarctica.
-    # Use antatm.m instead. 
-    #
-    # Remember: it is always better to estimate the average pressure at your 
-    # site using a pressure-altitude relation obtained from nearby station
-    # data.
-    #
-
-    # Written by Greg Balco -- UW Cosmogenic Nuclide Lab
-    # balcs@u.washington.edu
-    # October, 2007
-    # Part of the CRONUS-Earth online calculators: 
-    #      http://hess.ess.washington.edu/math
-    #
-    # Copyright 2001-2007, University of Washington
-    # All rights reserved
-    # Developed in part with funding from the National Science Foundation.
-    # 
-    # Modified by Nat Lifton -- Purdue University to use ERA-40 instead of NCEP
-    # March 2011
-
-    # This program is free software you can redistribute it and/or modify
-    # it under the terms of the GNU General Public License, version 3,
-    # as published by the Free Software Foundation (www.fsf.org).
+    """
+    Convert latitute (decimal degrees), longitude (decimal degrees), and elevation (m) into
+    site-specific pressure. Calculations are based on sea level pressure and 1000 mb temp from
+    ERA-40 reanalysis data. Site pressure is calculated using the standard atmosphere equation.
+    Southern and western hemisphere coordinates have negative signs.
     
-    # correct negative longitudes
+    Original Matlab code written by Greg Balco (2007), modified by Nat Lifton (2011), translated
+    to Python by Lennart Grimm (2025).
+    
+    Parameters:
+    -----------
+        site_lat : float
+            Single site latitude value, in decimal degrees.
+        site_lon : float
+            Single site longitude value, in decimal degrees.
+        site_elev : float
+            Single site elevation value, in meters.
+        era40 : dict
+            Dictionary containing the relevant ERA40 parameters. By default, 
+            this dict is called from parse_LSDERA40, but any dict with the same syntax will work.
+            
+    Return:
+    -------
+        out : float
+            The site specific pressure in hPa.
+    """
 
     if site_lon < 0: site_lon += 360
 

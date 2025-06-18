@@ -9,17 +9,29 @@ except ImportError:
 ############################################################
 
 def calculate_muon_flux(
-    h : np.ndarray,
+    h : float,
     Rc : np.ndarray,
-    s : np.ndarray
-):
-    # h -- pressure (hPa)
-    # Rc -- cutoff rigitidy
-    # s -- TODO: find out what this is??
+    s : float
+) -> dict:
+    """
+    Calculate muon flux scaling factors.
     
-    # Sato et al. (2008) Neutron Spectrum
-    # Analytical Function Approximation (PARMA)
-    # Translated to Python from the LSD matlab code
+    Translated to Python by Lennart Grimm (2025).
+    
+    Parameters:
+    -----------
+        h : float
+            Site pressure in hPa.
+        Rc : np.ndarray
+            Cutoff rigidities in GV.
+        s : float 
+            Solar modulation potential.
+            
+    Returns:
+    --------
+        out : dict
+            A dict of scaling factors.
+    """
 
     x = h*1.019716 # Convert pressure (hPa) to atm depth (g/cm2)
 
@@ -523,13 +535,37 @@ def calculate_muon_flux(
     return mflux
 
 def calculate_neutron_flux(
-    h : np.ndarray,
+    h : float,
     Rc : np.ndarray,
-    s : np.ndarray,
+    s : float,
     w : float,
     nuclide : int,
     consts = parse_LSDconsts(),
-):
+) -> dict:
+    
+    """
+    Calculate neutron flux scaling factors.
+    
+    Translated to Python by Lennart Grimm (2025).
+    
+    Parameters:
+    -----------
+        h : float
+            Site pressure in hPa.
+        Rc : np.ndarray
+            Cutoff rigidities in GV.
+        s : float 
+            Solar modulation potential.
+        w : float
+            Gravimetric fractional water content.
+        nuclide : int
+            Mass number of the nuclide of interest (3, 10, 14, 26).
+            
+    Returns:
+    --------
+        out : dict
+            A dict of scaling factors.
+    """
     
     x = h*1.019716 # Convert pressure (hPa) to atm depth (g/cm2)
 
@@ -751,26 +787,35 @@ def calculate_neutron_flux(
     return nflux
     
 def calculate_proton_flux(
-    h : np.ndarray,
+    h : float,
     Rc : np.ndarray,
-    s : np.ndarray,
+    s : float,
     nuclide : int,
     consts = parse_LSDconsts()
-):
+) -> dict:
+    """
+    Calculate proton flux scaling factors.
     
-    # Sato et al. (2008) Neutron Spectrum
-    # Analytical Function Approximation (PARMA)
-    # Implemented in MATLAB by Nat Lifton, 2013
-    # Purdue University, nlifton@purdue.edu
-
-    # Copyright 2013, Purdue University
-    # All rights reserved
-    # Developed in part with funding from the National Science Foundation.
-    #
-    # This program is free software you can redistribute it and/or modify
-    # it under the terms of the GNU General Public License, version 3,
-    # as published by the Free Software Foundation (www.fsf.org).
-
+    Original Matlab code by Nat Lifton (2013), 
+    translated to Python by Lennart Grimm (2025).
+    
+    Parameters:
+    -----------
+        h : float
+            Site pressure in hPa.
+        Rc : np.ndarray
+            Cutoff rigidities in GV.
+        s : float 
+            Solar modulation potential.
+        nuclide : int
+            Mass number of the nuclide of interest (3, 10, 14, 26).
+            
+    Returns:
+    --------
+        out : dict
+            A dict of scaling factors.
+    """
+    
     x = h*1.019716 # Convert pressure (hPa) to atm depth (g/cm2)
 
     E = np.logspace(0,5.3010,200)
@@ -962,25 +1007,35 @@ def calculate_proton_flux(
 
     
 def calculate_low_E_neutron_flux(
-    h : np.ndarray,
+    h : float,
     Rc : np.ndarray,
-    s : np.ndarray,
+    s : float,
     w : float
-):
-    #reduced version that does not do cross-sections but includes thermal and
-    #epithermal spectra
-    # Sato et al. (2008) Neutron Spectrum
-    # Analytical Function Approximation (PARMA)
-    # Implemented in MATLAB by Nat Lifton, June 2013
-    # Purdue University, nlifton@purdue.edu
-
-    # Copyright 2013, Purdue University and University of Arizona
-    # All rights reserved
-    # Developed in part with funding from the National Science Foundation.
-    #
-    # This program is free software you can redistribute it and/or modify
-    # it under the terms of the GNU General Public License, version 3,
-    # as published by the Free Software Foundation (www.fsf.org).
+) -> tuple[np.ndarray, np.ndarray]:
+    
+    """
+    Calculate low-energy neutron flux scaling factors.
+    
+    Original Matlab code by Nat Lifton (2013), 
+    translated to Python by Lennart Grimm (2025).
+    
+    Parameters:
+    -----------
+        h : float
+            Site pressure in hPa.
+        Rc : np.ndarray
+            Cutoff rigidities in GV.
+        s : float 
+            Solar modulation potential.
+        w : float
+            Gravimetric fractional water content.
+            
+    Returns:
+    --------
+        out : tuple
+            Tuple of (scaling_eth, scaling_th) scaling factors for epithermal
+            and thermal neutrons.
+    """
 
     x = h*1.019716 # Convert pressure (hPa) to atm depth (g/cm2)
 
