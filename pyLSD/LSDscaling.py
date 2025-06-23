@@ -19,7 +19,8 @@ except ImportError:
         calculate_low_E_neutron_flux
     )
     from LSDatm import convert_xyz_to_pressure
-    
+
+
 def apply_LSD_scaling_routine(
     lat : float,
     lon : float,
@@ -302,7 +303,7 @@ if __name__ == "__main__":
         print(k, era40[k].shape)
     
     start = time.time()
-    n_repeats = 1
+    n_repeats = 100
     for i in range(0, n_repeats):
         output = apply_LSD_scaling_routine(
             lat=45,
