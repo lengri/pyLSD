@@ -3,16 +3,18 @@ try:
     from .LSDparse import parse_LSDconsts
 except ImportError:
     from LSDparse import parse_LSDconsts
+from numba import njit 
 
 ############################################################
 ### NEUTRON, MUON, PROTON, LOW E NEUTRON SPECTRA GO HERE ###
 ############################################################
 
+@njit
 def calculate_muon_flux(
     h : float,
     Rc : np.ndarray,
-    s : float
-) -> dict:
+    s : np.ndarray
+) -> tuple:
     """
     Calculate muon flux scaling factors.
     
@@ -24,7 +26,7 @@ def calculate_muon_flux(
             Site pressure in hPa.
         Rc : np.ndarray
             Cutoff rigidities in GV.
-        s : float 
+        s : np.ndarray 
             Solar modulation potential.
             
     Returns:
@@ -46,7 +48,7 @@ def calculate_muon_flux(
     # Flatten low rigidities
 
     lowRc = np.where(Rc < 1.0)[0]
-    Rc[lowRc] = 1.0 + np.zeros(lowRc.shape)
+    Rc[lowRc] = np.ones(lowRc.shape)
 
     smin = 400 #units of MV
     smax = 1200 #units of MV
@@ -401,15 +403,15 @@ def calculate_muon_flux(
     h65p = 1.9700
 
     # store outputs here
-    mflux = {
-        "total" : np.zeros(Rc.shape),
-        "neg" : np.zeros((len(Rc), len(E))),
-        "pos" : np.zeros((len(Rc), len(E))),
-        "nint" : np.zeros(Rc.shape),
-        "pint" : np.zeros(Rc.shape),
-        "E": E
-    }
     
+    mflux_total = np.zeros(Rc.shape)
+    mflux_neg = np.zeros((len(Rc), len(E)))
+    mflux_pos = np.zeros((len(Rc), len(E)))
+    mflux_nint = np.zeros(Rc.shape)
+    mflux_pint = np.zeros(Rc.shape)
+    mflux_E = E
+    mflux_p = p
+
     for a in range(0, len(Rc)):
         #Negative Muons
         v11nmin = w111nmin + w112nmin*Rc[a] + w113nmin/(1 + np.exp((Rc[a] - w114nmin)/w115nmin))
@@ -522,17 +524,15 @@ def calculate_muon_flux(
         
         # Total integral flux 
 
-        mflux["total"][a] = np.trapz(x=E, y=Phimu[a,:])
+        mflux_total[a] = np.trapz(x=E, y=Phimu[a,:])
         # Differential fluxes for negative and positive muons
-        mflux["neg"][a,:] = phimun
-        mflux["pos"][a,:] = phimup
+        mflux_neg[a,:] = phimun
+        mflux_pos[a,:] = phimup
         # Integral fluxes for positive and negative muons
-        mflux["nint"][a] = np.trapz(x=E,y=phimun)
-        mflux["pint"][a] = np.trapz(x=E,y=phimup)
-        
-    mflux["p"] = p
+        mflux_nint[a] = np.trapz(x=E,y=phimun)
+        mflux_pint[a] = np.trapz(x=E,y=phimup)
     
-    return mflux
+    return (mflux_total, mflux_neg, mflux_pos, mflux_nint, mflux_pint)
 
 def calculate_neutron_flux(
     h : float,
@@ -731,7 +731,7 @@ def calculate_neutron_flux(
         "P14n" : np.zeros(Rc.shape),
         "P26n" : np.zeros(Rc.shape),
         "nflux" : np.zeros(Rc.shape),
-        "E": E
+        "E": E,
     }
     
     for a in range(0, len(Rc)):
@@ -1005,7 +1005,7 @@ def calculate_proton_flux(
             
     return P
 
-    
+@njit
 def calculate_low_E_neutron_flux(
     h : float,
     Rc : np.ndarray,
@@ -1233,3 +1233,20 @@ def calculate_low_E_neutron_flux(
         thflux[a] = np.trapz(x=E[:clipindexth+1],y=PhiGMev[:clipindexth+1])
         
     return (ethflux, thflux)
+
+if __name__ == "__main__":
+    
+    import time 
+    
+    init_start = time.time()
+    calculate_muon_flux(1000, np.array([0.5]), np.array([1]))
+    calculate_low_E_neutron_flux(1000, np.array([0.5]), np.array([1]), 0.75)
+    init_end = time.time()
+    print("init:", init_end-init_start)
+    
+    run_start = time.time()
+    for i in range(0, 100):
+        out = calculate_muon_flux(1000, np.array([0.5]), np.array([1]))
+        calculate_low_E_neutron_flux(1000, np.array([0.5]), np.array([1]), 0.75)
+    run_end = time.time()
+    print("run:", run_end-run_start)
