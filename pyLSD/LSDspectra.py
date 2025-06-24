@@ -532,7 +532,7 @@ def calculate_muon_flux(
         mflux_nint[a] = np.trapz(x=E,y=phimun)
         mflux_pint[a] = np.trapz(x=E,y=phimup)
     
-    return (mflux_total, mflux_neg, mflux_pos, mflux_nint, mflux_pint)
+    return (mflux_total, mflux_neg, mflux_pos, mflux_nint, mflux_pint, mflux_E, mflux_p)
 
 def calculate_neutron_flux(
     h : float,

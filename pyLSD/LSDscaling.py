@@ -254,11 +254,11 @@ def _calculate_LSD_production_scaling(
     PSite = calculate_proton_flux(h,Rc,SPhi,nuclide,consts)
 
     # Site omnidirectional muon flux
-    mflux = calculate_muon_flux(h,Rc,SPhi) #Generates muon flux at site from Sato et al. (2008) model
-    muSite = (mflux["neg"] + mflux["pos"])
+    mflux_total, mflux_neg, mflux_pos, mflux_nint, mflux_pint, mflux_E, mflux_p = calculate_muon_flux(h,Rc,SPhi) #Generates muon flux at site from Sato et al. (2008) model
+    muSite = mflux_neg + mflux_pos
 
     Site = {
-        "muSF": np.zeros((len(Rc), len(mflux["E"])))
+        "muSF": np.zeros((len(Rc), len(mflux_E)))
     }
     
     #Nuclide-specific scaling factors as f(Rc)
@@ -278,17 +278,17 @@ def _calculate_LSD_production_scaling(
     Site["th"] = thflux/ThRef #Thermal neutron flux scaling factor as f(Rc)
 
     #Differential muon flux scaling factors as f(Energy, Rc)
-    Site["muE"] = mflux["E"] #Muon flux energy bins (in MeV)
-    Site["mup"] = mflux["p"] #Muon flux momentum bins (in MeV/c)
+    Site["muE"] = mflux_E #Muon flux energy bins (in MeV)
+    Site["mup"] = mflux_p #Muon flux momentum bins (in MeV/c)
 
     for i in range(0, len(Rc)):
         Site["muSF"][i,:] = muSite[i,:]/muRef
     #Integral muon flux scaling factors as f(Rc)
-    Site["muTotal"] = mflux["total"]/mfluxRef["total"] #Integral total muon flux scaling factor
-    Site["mn"] = mflux["nint"]/mfluxRef["nint"] #Integral neg muon flux scaling factor
-    Site["mp"] = mflux["pint"]/mfluxRef["pint"] #Integral pos muon flux scaling factor
-    Site["mnabs"] = mflux["nint"] #Integral neg muon flux
-    Site["mpabs"] = mflux["pint"] #Integral pos muon flux 
+    Site["muTotal"] = mflux_total/mfluxRef["total"] #Integral total muon flux scaling factor
+    Site["mn"] = mflux_nint/mfluxRef["nint"] #Integral neg muon flux scaling factor
+    Site["mp"] = mflux_pint/mfluxRef["pint"] #Integral pos muon flux scaling factor
+    Site["mnabs"] = mflux_nint #Integral neg muon flux
+    Site["mpabs"] = mflux_pint #Integral pos muon flux 
         
     return Site
 
