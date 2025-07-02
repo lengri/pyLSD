@@ -19,6 +19,5 @@ readme = "README.md"
 requires-python = ">=3.7"
 dependencies = [
   "numpy",
-  "scipy",
-  "numba"
+  "scipy"
 ]
