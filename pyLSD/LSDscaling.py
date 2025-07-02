@@ -29,8 +29,7 @@ def apply_LSD_scaling_routine(
     age : float = 0.,
     w : float = -1.,
     nuclide : int = 10,
-    consts : dict = parse_LSDconsts(),
-    era40 : dict = parse_LSDERA40()
+    consts : dict = parse_LSDconsts()
 ):
     
     """
@@ -61,9 +60,6 @@ def apply_LSD_scaling_routine(
         consts : dict
             All the constants going into the LSD scaling scheme. By default, a dict called from
             parse_LSDconsts().
-        era40 : dict
-            ERA40 reanalyis data used for calculating site-specific pressure if stdatm=False. By default,
-            a dict called from parse_LSDERA40().
         
     Returns:
     --------
@@ -122,7 +118,7 @@ def apply_LSD_scaling_routine(
         sample["pressure"] = 1013.25 * np.exp( (gmr/dtdz) * ( np.log(288.15) - np.log(288.15 - (alt*dtdz)) ) )
     else:
         # Use era40 reanalysis data
-        sample["pressure"] = convert_xyz_to_pressure(sample["lat"],sample["lon"],sample["alt"],era40)
+        sample["pressure"] = convert_xyz_to_pressure(sample["lat"],sample["lon"],sample["alt"])
 
     # catch for negative longitudes before Rc interpolation
     if np.any(sample["lon"] < 0): 
@@ -249,9 +245,9 @@ def _calculate_LSD_production_scaling(
 
     # Site nucleon fluxes
 
-    NSite = calculate_neutron_flux(h,Rc,SPhi,w,nuclide,consts)
+    nflux_P3n, nflux_P10n, nflux_P14n, nflux_P26n, nflux_nflux, nflux_E = calculate_neutron_flux(h, Rc, SPhi, w, nuclide)
     ethflux, thflux = calculate_low_E_neutron_flux(h,Rc,SPhi,w)
-    PSite = calculate_proton_flux(h,Rc,SPhi,nuclide,consts)
+    P_P3p, P_P10p, P_P14p, P_P26p, P_pflux, E = calculate_proton_flux(h, Rc, SPhi, nuclide)
 
     # Site omnidirectional muon flux
     mflux_total, mflux_neg, mflux_pos, mflux_nint, mflux_pint, mflux_E, mflux_p = calculate_muon_flux(h,Rc,SPhi) #Generates muon flux at site from Sato et al. (2008) model
@@ -263,17 +259,17 @@ def _calculate_LSD_production_scaling(
     
     #Nuclide-specific scaling factors as f(Rc)
     if nuclide == 3:
-        Site["He"] = (NSite["P3n"] + PSite["P3p"])/HeRef
+        Site["He"] = (nflux_P3n + P_P3p)/HeRef
     elif nuclide == 10:
-        Site["Be"] = (NSite["P10n"] + PSite["P10p"])/BeRef
+        Site["Be"] = (nflux_P10n + P_P10p)/BeRef
     elif nuclide == 14:
-        Site["C"] = (NSite["P14n"] + PSite["P14p"])/CRef
+        Site["C"] = (nflux_P14n + P_P14p)/CRef
     elif nuclide == 26:
-        Site["Al"] = (NSite["P26n"] + PSite["P26p"])/AlRef
+        Site["Al"] = (nflux_P26n + P_P26p)/AlRef
     else:    #Total nucleon flux scaling factors as f(Rc)
-        Site["sp"] = ((NSite["nflux"] + PSite["pflux"]))/SpRef # Sato et al. (2008) Reference hadron flux integral >1 MeV
+        Site["sp"] = ((nflux_nflux + P_pflux))/SpRef # Sato et al. (2008) Reference hadron flux integral >1 MeV
 
-    Site["E"] = NSite["E"] #Nucleon flux energy bins
+    Site["E"] = nflux_E #Nucleon flux energy bins
     Site["eth"] = ethflux/EthRef #Epithermal neutron flux scaling factor as f(Rc)
     Site["th"] = thflux/ThRef #Thermal neutron flux scaling factor as f(Rc)
 
@@ -297,24 +293,19 @@ if __name__ == "__main__":
     import time 
     
     consts = parse_LSDconsts()
-    era40 = parse_LSDERA40()    
-    
-    for k in era40.keys():
-        print(k, era40[k].shape)
     
     start = time.time()
     n_repeats = 100
     for i in range(0, n_repeats):
         output = apply_LSD_scaling_routine(
-            lat=45,
-            lon=45,
-            alt=4000,
+            lat=90,
+            lon=0,
+            alt=2000,
             stdatm=False,
-            age=10,
+            age=0,
             w=-1,
             nuclide=10,
             #consts=consts,
-            #era40=era40
         )
     end = time.time()
     print(end-start)

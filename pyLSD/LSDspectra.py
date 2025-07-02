@@ -3,13 +3,47 @@ try:
     from .LSDparse import parse_LSDconsts
 except ImportError:
     from LSDparse import parse_LSDconsts
-from numba import njit 
+
+############################################################
+### LOADING CONSTANTS TO AVOID DICTS WHEN USING NUMBA ######
+############################################################
+
+# Note: I wrote this initially to make the code compatible with
+# numba, but the performance decreased. May be related to the 
+# specific setup of the functions (declaring many constants etc)
+
+# To make the performance better with numbe, I might need to completely
+# overhaul the code at some point.
+
+# For now, the code does not make use of numba performance improvements in any way...
+consts = parse_LSDconsts()
+
+_consts_Natoms3 = consts["Natoms3"][0]
+_consts_Natoms10 = consts["Natoms10"][0]
+_consts_Natoms14 = consts["Natoms14"][0]
+_consts_Natoms26 = consts["Natoms26"][0]
+
+_consts_OnxHe3T = consts["OnxHe3T"]
+_consts_O16nxBe10 = consts["O16nxBe10"]
+_consts_O16nn2pC14 = consts["O16nn2pC14"]
+_consts_SinxAl26 = consts["SinxAl26"]
+_consts_SinxHe3T = consts["SinxHe3T"]
+_consts_SinxBe10 = consts["SinxBe10"]
+_consts_SinxC14 = consts["SinxC14"]
+
+_consts_OpxHe3T = consts["OpxHe3T"]
+_consts_SipxHe3T = consts["SipxHe3T"]
+_consts_O16pxBe10 = consts["O16pxBe10"]
+_consts_SipxBe10 = consts["SipxBe10"]
+_consts_O16pxC14 = consts["O16pxC14"]
+_consts_SipxC14 = consts["SipxC14"]
+_consts_SipxAl26 = consts["SipxAl26"]
 
 ############################################################
 ### NEUTRON, MUON, PROTON, LOW E NEUTRON SPECTRA GO HERE ###
 ############################################################
 
-@njit
+
 def calculate_muon_flux(
     h : float,
     Rc : np.ndarray,
@@ -34,16 +68,17 @@ def calculate_muon_flux(
         out : dict
             A dict of scaling factors.
     """
+    # Constants for the muon flux calculation
+
+    _muon_E = np.logspace(1,5.9030,200) # (in MeV)
+
+    _muon_Emu = 105.658# in Mev, Rest energy of muon
+    _muon_alpha3 = 3.7 # Muon spectrum power law np.exponent
+    _muon_Beta = np.sqrt(1-(_muon_Emu/(_muon_Emu + _muon_E))**2) # Particle speed relative to light
+    _muon_c = 3.0e8 # speed of light, in m/s
+    _muon_p = np.sqrt((_muon_E**2 + 2*_muon_E*_muon_Emu)) # in MeV/c
 
     x = h*1.019716 # Convert pressure (hPa) to atm depth (g/cm2)
-
-    E = np.logspace(1,5.9030,200) # (in MeV)
-
-    Emu = 105.658# in Mev, Rest energy of muon
-    alpha3 = 3.7 # Muon spectrum power law np.exponent
-    Beta = np.sqrt(1-(Emu/(Emu + E))**2) # Particle speed relative to light
-    c = 3.0e8 # speed of light, in m/s
-    p = np.sqrt((E**2 + 2*E*Emu)) # in MeV/c
 
     # Flatten low rigidities
 
@@ -53,7 +88,7 @@ def calculate_muon_flux(
     smin = 400 #units of MV
     smax = 1200 #units of MV
 
-    Phimu = np.zeros((len(Rc),len(E)))
+    Phimu = np.zeros((len(Rc),len(_muon_E)))
 
     # Negative muon coefficients
 
@@ -405,12 +440,12 @@ def calculate_muon_flux(
     # store outputs here
     
     mflux_total = np.zeros(Rc.shape)
-    mflux_neg = np.zeros((len(Rc), len(E)))
-    mflux_pos = np.zeros((len(Rc), len(E)))
+    mflux_neg = np.zeros((len(Rc), len(_muon_E)))
+    mflux_pos = np.zeros((len(Rc), len(_muon_E)))
     mflux_nint = np.zeros(Rc.shape)
     mflux_pint = np.zeros(Rc.shape)
-    mflux_E = E
-    mflux_p = p
+    mflux_E = _muon_E
+    mflux_p = _muon_p
 
     for a in range(0, len(Rc)):
         #Negative Muons
@@ -452,8 +487,8 @@ def calculate_muon_flux(
         t3nmin = v31nmin + v32nmin*x + v33nmin*x**2 + v34nmin*x**3 + v35nmin*x**4
         t3nmax = v31nmax + v32nmax*x + v33nmax*x**2 + v34nmax*x**3 + v35nmax*x**4
 
-        phimunmin = Phimn*(E + (t1nmin + t2nmin*np.log10(E))/(Beta**t3nmin))**-alpha3
-        phimunmax = Phimn*(E + (t1nmax + t2nmax*np.log10(E))/(Beta**t3nmax))**-alpha3
+        phimunmin = Phimn*(_muon_E + (t1nmin + t2nmin*np.log10(_muon_E))/(_muon_Beta**t3nmin))**-_muon_alpha3
+        phimunmax = Phimn*(_muon_E + (t1nmax + t2nmax*np.log10(_muon_E))/(_muon_Beta**t3nmax))**-_muon_alpha3
 
         g5n = h51n + h52n*Rc[a] + h53n/(1 + np.exp((Rc[a] - h54n)/h55n))
         g6n = h61n + h62n*Rc[a] + h63n/(1 + np.exp((Rc[a] - h64n)/h65n))
@@ -503,8 +538,8 @@ def calculate_muon_flux(
         t3pmin = v31pmin + v32pmin*x + v33pmin*x**2 + v34pmin*x**3 + v35pmin*x**4
         t3pmax = v31pmax + v32pmax*x + v33pmax*x**2 + v34pmax*x**3 + v35pmax*x**4
 
-        phimupmin = Phimp*(E + (t1pmin + t2pmin*np.log10(E))/(Beta**t3pmin))**-alpha3
-        phimupmax = Phimp*(E + (t1pmax + t2pmax*np.log10(E))/(Beta**t3pmax))**-alpha3
+        phimupmin = Phimp*(_muon_E + (t1pmin + t2pmin*np.log10(_muon_E))/(_muon_Beta**t3pmin))**-_muon_alpha3
+        phimupmax = Phimp*(_muon_E + (t1pmax + t2pmax*np.log10(_muon_E))/(_muon_Beta**t3pmax))**-_muon_alpha3
 
         g5p = h51p + h52p*Rc[a] + h53p/(1 + np.exp((Rc[a] - h54p)/h55p))
         g6p = h61p + h62p*Rc[a] + h63p/(1 + np.exp((Rc[a] - h64p)/h65p))
@@ -524,13 +559,13 @@ def calculate_muon_flux(
         
         # Total integral flux 
 
-        mflux_total[a] = np.trapz(x=E, y=Phimu[a,:])
+        mflux_total[a] = np.trapz(x=_muon_E, y=Phimu[a,:])
         # Differential fluxes for negative and positive muons
         mflux_neg[a,:] = phimun
         mflux_pos[a,:] = phimup
         # Integral fluxes for positive and negative muons
-        mflux_nint[a] = np.trapz(x=E,y=phimun)
-        mflux_pint[a] = np.trapz(x=E,y=phimup)
+        mflux_nint[a] = np.trapz(x=_muon_E,y=phimun)
+        mflux_pint[a] = np.trapz(x=_muon_E,y=phimup)
     
     return (mflux_total, mflux_neg, mflux_pos, mflux_nint, mflux_pint, mflux_E, mflux_p)
 
@@ -540,8 +575,7 @@ def calculate_neutron_flux(
     s : float,
     w : float,
     nuclide : int,
-    consts = parse_LSDconsts(),
-) -> dict:
+) -> tuple:
     
     """
     Calculate neutron flux scaling factors.
@@ -724,15 +758,12 @@ def calculate_neutron_flux(
     p36Kn = np.zeros(E.shape)
     p36Tin = np.zeros(E.shape)
     p36Fen = np.zeros(E.shape)
-
-    nflux = {
-        "P3n" : np.zeros(Rc.shape),
-        "P10n" : np.zeros(Rc.shape),
-        "P14n" : np.zeros(Rc.shape),
-        "P26n" : np.zeros(Rc.shape),
-        "nflux" : np.zeros(Rc.shape),
-        "E": E,
-    }
+    
+    nflux_P3n = np.zeros(Rc.shape)
+    nflux_P10n = np.zeros(Rc.shape)
+    nflux_P14n = np.zeros(Rc.shape)
+    nflux_P26n = np.zeros(Rc.shape)
+    nflux_nflux = np.zeros(Rc.shape)
     
     for a in range(0, len(Rc)):
         
@@ -774,25 +805,24 @@ def calculate_neutron_flux(
         clipindex = np.where(E <= 1)[0][-1] #Make sure the clip index is consistent with the definition of E above
         
         if nuclide == 3:
-            nflux["P3n"][a] = (np.trapz(x=E[clipindex:],y=PhiGMev[clipindex:]*consts["OnxHe3T"][clipindex:]) + np.trapz(x=E[clipindex:],y=PhiGMev[clipindex:]*consts["SinxHe3T"][clipindex:]/2))*consts["Natoms3"]*1e-27*3.1536e7    
+            nflux_P3n[a] = (np.trapz(x=E[clipindex:],y=PhiGMev[clipindex:]*_consts_OnxHe3T[clipindex:]) + np.trapz(x=E[clipindex:],y=PhiGMev[clipindex:]*_consts_SinxHe3T[clipindex:]/2))*_consts_Natoms3*1e-27*3.1536e7    
         elif nuclide == 10:    
-            nflux ["P10n"][a] = (np.trapz(x=E[clipindex:],y=PhiGMev[clipindex:]*consts["O16nxBe10"][clipindex:]) + np.trapz(x=E[clipindex:],y=PhiGMev[clipindex:]*consts["SinxBe10"][clipindex:]/2))*consts["Natoms10"]*1e-27*3.1536e7    
+            nflux_P10n[a] = (np.trapz(x=E[clipindex:],y=PhiGMev[clipindex:]*_consts_O16nxBe10[clipindex:]) + np.trapz(x=E[clipindex:],y=PhiGMev[clipindex:]*_consts_SinxBe10[clipindex:]/2))*_consts_Natoms10*1e-27*3.1536e7    
         elif nuclide == 14:      
-            nflux["P14n"][a] = (np.trapz(x=E[clipindex:],y=PhiGMev[clipindex:]*consts["O16nn2pC14"][clipindex:])+ np.trapz(x=E[clipindex:],y=PhiGMev[clipindex:]*consts["SinxC14"][clipindex:]/2))*consts["Natoms14"]*1e-27*3.1536e7    
+            nflux_P14n[a] = (np.trapz(x=E[clipindex:],y=PhiGMev[clipindex:]*_consts_O16nn2pC14[clipindex:])+ np.trapz(x=E[clipindex:],y=PhiGMev[clipindex:]*_consts_SinxC14[clipindex:]/2))*_consts_Natoms14*1e-27*3.1536e7    
         elif nuclide == 26:  
-            nflux["P26n"][a] = np.trapz(x=E[clipindex:],y=PhiGMev[clipindex:]*consts["SinxAl26"][clipindex:])*consts["Natoms26"]*1e-27*3.1536e7
+            nflux_P26n[a] = np.trapz(x=E[clipindex:],y=PhiGMev[clipindex:]*_consts_SinxAl26[clipindex:])*_consts_Natoms26*1e-27*3.1536e7
         else:
-            nflux["nflux"][a] = np.trapz(x=E[clipindex:],y=PhiGMev[clipindex:])  
+            nflux_nflux[a] = np.trapz(x=E[clipindex:],y=PhiGMev[clipindex:])  
 
-    return nflux
-    
+    return (nflux_P3n, nflux_P10n, nflux_P14n, nflux_P26n, nflux_nflux, E)
+
 def calculate_proton_flux(
     h : float,
     Rc : np.ndarray,
-    s : float,
-    nuclide : int,
-    consts = parse_LSDconsts()
-) -> dict:
+    s : np.ndarray,
+    nuclide : int
+) -> tuple:
     """
     Calculate proton flux scaling factors.
     
@@ -942,15 +972,13 @@ def calculate_proton_flux(
     h65 = 8.3700e-1
 
     # Combine primary and secondary spectra
-
-    P = {
-        "P3p": np.zeros(Rc.shape),
-        "P10p": np.zeros(Rc.shape),
-        "P14p": np.zeros(Rc.shape),
-        "P26p": np.zeros(Rc.shape),
-        "pflux": np.zeros(Rc.shape),
-        "E": E
-    }
+    
+    P_P3p = np.zeros(Rc.shape)
+    P_P10p = np.zeros(Rc.shape)
+    P_P14p = np.zeros(Rc.shape)
+    P_P26p = np.zeros(Rc.shape)
+    P_pflux = np.zeros(Rc.shape)
+    
     for a in range(0,len(Rc)):
         Elis = Etoa + s[a]*Z/A
         Beta = np.sqrt(1-(Ep/(Ep + Elis*A))**2) # Particle speed relative to light
@@ -993,19 +1021,18 @@ def calculate_proton_flux(
         clipindex = np.where(E <= 1)[0][-1] #Make sure the clip index is consistent with the definition of E above
         
         if nuclide == 3:
-            P["P3p"][a] = (np.trapz(x=E,y=phiPtot*consts["OpxHe3T"]) + np.trapz(x=E,y=phiPtot*consts["SipxHe3T"]/2))*consts["Natoms3"]*1e-27*3.1536e7    
+            P_P3p[a] = (np.trapz(x=E,y=phiPtot*_consts_OpxHe3T) + np.trapz(x=E,y=phiPtot*_consts_SipxHe3T/2))*_consts_Natoms3*1e-27*3.1536e7    
         elif nuclide == 10:
-            P["P10p"][a] = (np.trapz(x=E,y=phiPtot*consts["O16pxBe10"]) + np.trapz(x=E,y=phiPtot*consts["SipxBe10"]/2))*consts["Natoms10"]*1e-27*3.1536e7
+            P_P10p[a] = (np.trapz(x=E,y=phiPtot*_consts_O16pxBe10) + np.trapz(x=E,y=phiPtot*_consts_SipxBe10/2))*_consts_Natoms10*1e-27*3.1536e7
         elif nuclide == 14:   
-            P["P14p"][a] = (np.trapz(x=E,y=phiPtot*consts["O16pxC14"])+ np.trapz(x=E,y=phiPtot*consts["SipxC14"]/2))*consts["Natoms14"]*1e-27*3.1536e7
+            P_P14p[a] = (np.trapz(x=E,y=phiPtot*_consts_O16pxC14)+ np.trapz(x=E,y=phiPtot*_consts_SipxC14/2))*_consts_Natoms14*1e-27*3.1536e7
         elif nuclide == 26:
-            P["P26p"][a] = np.trapz(x=E,y=phiPtot*consts["SipxAl26"])*consts["Natoms26"]*1e-27*3.1536e7 
+            P_P26p[a] = np.trapz(x=E,y=phiPtot*_consts_SipxAl26)*_consts_Natoms26*1e-27*3.1536e7 
         else:
-            P["pflux"][a] = np.trapz(x=E[clipindex:],y=phiPtot[clipindex:])
+            P_pflux[a] = np.trapz(x=E[clipindex:],y=phiPtot[clipindex:])
             
-    return P
+    return (P_P3p, P_P10p, P_P14p, P_P26p, P_pflux, E)
 
-@njit
 def calculate_low_E_neutron_flux(
     h : float,
     Rc : np.ndarray,
@@ -1237,16 +1264,26 @@ def calculate_low_E_neutron_flux(
 if __name__ == "__main__":
     
     import time 
+    a = np.array([0.5], dtype=np.float64)
+    b = np.array([1], dtype=np.float64)
     
+    # print(calculate_muon_flux(1000, a, b))
+
     init_start = time.time()
-    calculate_muon_flux(1000, np.array([0.5]), np.array([1]))
-    calculate_low_E_neutron_flux(1000, np.array([0.5]), np.array([1]), 0.75)
+    calculate_muon_flux(1000, a, b)
+    calculate_low_E_neutron_flux(1000, a, b, 0.75)
+    calculate_proton_flux(1000, a, b, 3)
+    calculate_neutron_flux(1000, a, b, 0.75, 3)
     init_end = time.time()
-    print("init:", init_end-init_start)
+    print("init", init_end-init_start)
     
     run_start = time.time()
     for i in range(0, 100):
-        out = calculate_muon_flux(1000, np.array([0.5]), np.array([1]))
-        calculate_low_E_neutron_flux(1000, np.array([0.5]), np.array([1]), 0.75)
+        calculate_muon_flux(1000, a, b)
+        calculate_low_E_neutron_flux(1000, a, b, 0.75)
+        calculate_proton_flux(1000, a, b, 0.75)
+        calculate_proton_flux(1000, a, b, 3)
+        calculate_neutron_flux(1000, a, b, 0.75, 3)
     run_end = time.time()
     print("run:", run_end-run_start)
+

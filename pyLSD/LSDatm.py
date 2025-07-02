@@ -1,15 +1,43 @@
 import numpy as np 
 import scipy as sp 
-try:
-    from .LSDparse import parse_LSDERA40
-except ImportError:
-    from LSDparse import parse_LSDERA40
+from .LSDparse import parse_LSDERA40
 
+_era40 = parse_LSDERA40()
+_era40_lat = _era40["ERA40lat"]
+_era40_lon = _era40["ERA40lon"]
+_era40_meanP = _era40["meanP"]
+_era40_meanT = _era40["meanT"]
+
+_slp_interpolator = sp.interpolate.RegularGridInterpolator(
+    (_era40_lat, _era40_lon), 
+    _era40_meanP,
+    method="linear",
+    bounds_error=True
+)
+_T_interpolator = sp.interpolate.RegularGridInterpolator(
+    (_era40_lat, _era40_lon), 
+    _era40_meanT,
+    method="linear",
+    bounds_error=True
+)
+
+# This function is not njit-compatible because of the interpolators
 def convert_xyz_to_pressure(
+    site_lat, site_lon, site_elev
+):
+    if site_lon < 0: site_lon += 360
+
+    site_slp = _slp_interpolator((site_lat, site_lon))
+    site_T = _T_interpolator((site_lat, site_lon))
+    
+    return _compute_pressure(site_lat, site_lon, site_elev, site_slp, site_T)
+
+def _compute_pressure(
     site_lat : float, 
     site_lon : float, 
     site_elev : float,
-    era40 : dict = parse_LSDERA40()
+    site_slp : float,
+    site_T : float
 ) -> float:
     
     """
@@ -41,25 +69,7 @@ def convert_xyz_to_pressure(
 
     if site_lon < 0: site_lon += 360
 
-    # Interpolate sea level pressure and 1000-mb temperature
-    # from global reanalysis data grids. 
-
     # site_T in K, site_P in hPa
-
-    slp_interpolator = sp.interpolate.RegularGridInterpolator(
-        (era40["ERA40lat"], era40["ERA40lon"]), 
-        era40["meanP"],
-        method="linear",
-        bounds_error=True
-    )
-    site_slp = slp_interpolator((site_lat, site_lon))
-    T_interpolator = sp.interpolate.RegularGridInterpolator(
-        (era40["ERA40lat"], era40["ERA40lon"]), 
-        era40["meanT"],
-        method="linear",
-        bounds_error=True
-    )
-    site_T = T_interpolator((site_lat, site_lon))
 
     # site_slp = 1013.25
     # site_T = 288.15
@@ -113,12 +123,4 @@ def convert_xyz_to_pressure(
     return out
 
 if __name__ == "__main__": 
-    out = convert_xyz_to_pressure(
-        1,
-        1,
-        1
-    )
-    print(out)
-    
-    
-    
+    pass    
