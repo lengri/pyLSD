@@ -2,7 +2,7 @@ import numpy as np
 import scipy as sp
 
 try:
-    from .LSDparse import parse_LSDconsts, parse_LSDERA40
+    from .LSDparse import parse_LSDconsts
     from .LSDspectra import (
         calculate_muon_flux,
         calculate_proton_flux,
@@ -11,7 +11,7 @@ try:
     )
     from .LSDatm import convert_xyz_to_pressure
 except ImportError:
-    from LSDparse import parse_LSDconsts, parse_LSDERA40
+    from LSDparse import parse_LSDconsts
     from LSDspectra import (
         calculate_muon_flux,
         calculate_proton_flux,
@@ -285,6 +285,17 @@ def _calculate_LSD_production_scaling(
     Site["mp"] = mflux_pint/mfluxRef["pint"] #Integral pos muon flux scaling factor
     Site["mnabs"] = mflux_nint #Integral neg muon flux
     Site["mpabs"] = mflux_pint #Integral pos muon flux 
+    
+    # Calculate fast muon scaling factor!
+    # muE is the muon energy axis [MeV]
+    alpha = 0.75
+    
+    muSF_vec = Site["muSF"][0]     
+    muE      = Site["muE"]           # muon energy axis [MeV]
+
+    # Energy-weighted integration using muE not E
+    SF_fast = np.trapz(muSF_vec * muE**alpha, muE) / np.trapz(muE**alpha, muE)
+    Site["mf"] = SF_fast
         
     return Site
 
